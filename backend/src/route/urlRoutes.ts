@@ -1,17 +1,22 @@
 import { Router } from "express";
-import { UrlController } from "../controller/urlController";
+import { CreateController } from "../controller/url/createController";
+import { DeleteUrlController } from "../controller/url/deleteUrlController";
+import { GetUserUrlsController } from "../controller/url/getUserUrlsController";
+import { RedirectUrlController } from "../controller/url/redirectUrlController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
-const urlController = new UrlController();
+const createController = new CreateController();
+const deleteUrlController = new DeleteUrlController();
+const getUserUrlsController = new GetUserUrlsController();
+const redirectUrlController = new RedirectUrlController();
 
-// Public routes
-router.get("/:shortCode/redirect", urlController.redirectUrl);
+// Public routes - redirect tanpa login
+router.get("/:shortCode", redirectUrlController.redirect);
 
-// Protected routes (require authentication)
-router.post("/", authMiddleware, urlController.createShortUrl);
-router.get("/", authMiddleware, urlController.getUserUrls);
-router.get("/:urlId/stats", authMiddleware, urlController.getUrlStats);
-router.delete("/:urlId", authMiddleware, urlController.deleteUrl);
+// Protected routes - perlu login
+router.post("/", authMiddleware, createController.create);
+router.get("/", authMiddleware, getUserUrlsController.getAll);
+router.delete("/:urlId", authMiddleware, deleteUrlController.delete);
 
 export default router;

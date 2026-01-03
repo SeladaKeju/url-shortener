@@ -1,11 +1,11 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
-import { AuthRepository } from "../repository/authRepository";
+import { UserRepository } from "../../repository/user/userRepository";
 
 export class AuthService {
     private readonly JWT_SECRET: string;
     private readonly JWT_EXPIRES_IN: string;
-    private authRepository: AuthRepository;
+    private userRepository: UserRepository;
 
     constructor() {
         // 🔐 Pastikan JWT_SECRET ada
@@ -15,19 +15,21 @@ export class AuthService {
 
         this.JWT_SECRET = process.env.JWT_SECRET;
         this.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
-
-        this.authRepository = new AuthRepository();
+        this.userRepository = new UserRepository();
     }  
 
     async register(email: string, password: string) {
-        const emailExists = await this.authRepository.checkEmailExists(email);
+        const emailExists = await this.userRepository.findByEmail(email);
 
         if (emailExists) {
             throw new Error("Email sudah terdaftar");
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await this.authRepository.createUser(email, hashedPassword);
+        const user = await this.userRepository.create({
+            email,
+            password: hashedPassword
+        });
 
         const token = this.generateToken(user.id);
 
@@ -38,7 +40,7 @@ export class AuthService {
     }
 
     async login(email: string, password: string) {
-        const user = await this.authRepository.findUserByEmail(email);
+        const user = await this.userRepository.findByEmail(email);
 
         if (!user) {
             throw new Error("Email atau password salah");
@@ -63,7 +65,7 @@ export class AuthService {
     }
 
     async getUserById(userId: string) {
-        const user = await this.authRepository.findUserById(userId);
+        const user = await this.userRepository.findById(userId);
 
         if (!user) {
             throw new Error("User tidak ditemukan");
