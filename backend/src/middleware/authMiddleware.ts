@@ -4,33 +4,29 @@ import { AuthService } from "../service/user/authService";
 const authService = new AuthService();
 
 export const authMiddleware = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
-    try {
-        const authHeader = req.headers.authorization;
+  try {
+    const token = req.cookies?.token;
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            res.status(401).json({
-                success: false,
-                message: "Token tidak ditemukan"
-            });
-            return;
-        }
-
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-        const decoded = authService.verifyToken(token);
-
-        // Attach userId to request object
-        (req as any).userId = decoded.userId;
-
-        next();
-    } catch (error: any) {
-        res.status(401).json({
-            success: false,
-            message: error.message || "Unauthorized"
-        });
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "Authentication required. Please login to continue",
+      });
+      return;
     }
+
+    const decoded = authService.verifyToken(token);
+    (req as any).userId = decoded.userId;
+
+    next();
+  } catch (error: any) {
+    res.status(401).json({
+      success: false,
+      message: error.message || "Unauthorized",
+    });
+  }
 };

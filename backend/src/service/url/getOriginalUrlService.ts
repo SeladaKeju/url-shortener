@@ -12,7 +12,7 @@ export class GetOriginalUrlService {
         const url = await this.urlRepository.findByShortUrl(shortCode);
 
         if (!url) {
-            throw new Error("Short URL tidak ditemukan"); 
+            throw new Error("Short URL not found"); 
         }
 
         return url.originalUrl;

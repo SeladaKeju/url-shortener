@@ -18,7 +18,7 @@ export class RedirectUrlController {
     } catch (error: any) {
       res.status(404).json({
         success: false,
-        message: error.message || "Short URL tidak ditemukan",
+        message: error.message || "Short URL not found",
       });
     }
   };
