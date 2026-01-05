@@ -14,7 +14,7 @@ export class CreateUrlService {
     try {
       new URL(originalUrl);
     } catch (error) {
-      throw new Error();
+      throw new Error("Invalid URL format");
     }
 
     // Generate kode pendek unik
