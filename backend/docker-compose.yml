@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: urlshortener-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: urlshortener
+      POSTGRES_PASSWORD: postgres_password_dev
+      POSTGRES_DB: urlshortener
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urlshortener"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - urlshortener-network
+
+  # Backend Application
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urlshortener-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://urlshortener:postgres_password_dev@postgres:5432/urlshortener
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+      PORT: 3000
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - urlshortener-network
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+
+networks:
+  urlshortener-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
