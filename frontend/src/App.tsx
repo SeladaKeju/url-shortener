@@ -1,7 +1,16 @@
-import Home from './pages/Home'
+import { BrowserRouter as Router } from 'react-router-dom';
+import Footer from "./components/Footer";
+import Navbar from "./components/Navbar";
+import AppRoutes from "./routes";
 
 function App() {
-  return <Home />
+  return (
+    <Router>
+      <Navbar />
+      <AppRoutes />
+      <Footer />
+    </Router>
+  );
 }
 
-export default App
+export default App;
