@@ -1,38 +1,36 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
+import Card from "../components/ui/Card";
 
 export default function Register() {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
       return;
     }
 
     setLoading(true);
 
     try {
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-      console.log("Register success:", data);
-      // TODO: Handle register success (redirect to login, etc.)
+      await register(email, password);
+      navigate("/dashboard");
     } catch (error) {
-      console.error("Error registering:", error);
+      setError(error instanceof Error ? error.message : "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -53,79 +51,44 @@ export default function Register() {
           </p>
         </div>
 
-        <div className="rounded-xl shadow-lg p-8" style={{ backgroundColor: '#363636' }}>
+        <Card variant="elevated">
+          {error && <Alert type="error" message={error} className="mb-4" />}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border-2 text-white rounded-lg focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400"
-                style={{ backgroundColor: '#292929', borderColor: '#444' }}
-                placeholder="John Doe"
-              />
-            </div>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              label="Email Address"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border-2 text-white rounded-lg focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400"
-                style={{ backgroundColor: '#292929', borderColor: '#444' }}
-                placeholder="you@example.com"
-              />
-            </div>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 text-white rounded-lg focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400"
-                style={{ backgroundColor: '#292929', borderColor: '#444' }}
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-white mb-2">
-                Confirm Password
-              </label>
-              <input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 text-white rounded-lg focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400"
-                style={{ backgroundColor: '#292929', borderColor: '#444' }}
-                placeholder="••••••••"
-              />
-            </div>
+            <Input
+              id="confirm-password"
+              name="confirm-password"
+              type="password"
+              label="Confirm Password"
+              autoComplete="new-password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+            />
 
             <div className="flex items-center">
               <input
@@ -148,16 +111,15 @@ export default function Register() {
               </label>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full text-black font-semibold py-3.5 px-4 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                style={{ backgroundColor: '#f5f5f5' }}
-              >
-                {loading ? "Creating account..." : "Create account"}
-              </button>
-            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              isLoading={loading}
+              disabled={loading}
+            >
+              {loading ? "Creating account..." : "Create account"}
+            </Button>
           </form>
 
           <div className="mt-6 text-center">
@@ -168,7 +130,7 @@ export default function Register() {
               </Link>
             </p>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

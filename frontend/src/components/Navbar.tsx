@@ -1,6 +1,19 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <nav className="shadow-md" style={{ backgroundColor: '#292929' }}>
       <div className="container mx-auto px-4">
@@ -23,15 +36,38 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Right side - Login button */}
-          <div>
-            <Link
-              to="/login"
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-              style={{ backgroundColor: '#f5f5f5', color: '#000' }}
-            >
-              Login
-            </Link>
+          {/* Right side - Login/User info */}
+          <div className="flex items-center space-x-4">
+            {isAuthenticated ? (
+              <>
+                <span className="text-white hidden md:block">
+                  {user?.email}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-6 py-2 rounded-lg hover:bg-gray-200 transition"
+                  style={{ backgroundColor: '#f5f5f5', color: '#000' }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-6 py-2 rounded-lg hover:bg-gray-200 transition"
+                  style={{ backgroundColor: '#f5f5f5', color: '#000' }}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-6 py-2 rounded-lg border-2 border-white text-white hover:bg-white hover:text-black transition"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

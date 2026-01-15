@@ -1,35 +1,100 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
+import urlService from "../services/urlService";
+import type { Url } from "../services/urlService";
+import API_BASE_URL from "../config/api";
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [userUrls, setUserUrls] = useState<Url[]>([]);
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUserUrls();
+    }
+  }, [isAuthenticated]);
+
+  const fetchUserUrls = async () => {
+    try {
+      const response = await urlService.getUserUrls();
+      setUserUrls(response.data);
+    } catch (error) {
+      console.error("Error fetching URLs:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+    setSuccess("");
+    setShortUrl(""); // Clear previous result
 
     try {
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch("/api/shorten", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
+      if (!isAuthenticated) {
+        setError("Please login to shorten URLs");
+        setLoading(false);
+        return;
+      }
 
-      const data = await response.json();
-      setShortUrl(data.shortUrl);
+      // Validate URL format
+      if (!url || url.trim() === "") {
+        setError("Please enter a URL");
+        setLoading(false);
+        return;
+      }
+
+      // Auto-add https:// if no protocol
+      let formattedUrl = url.trim();
+      if (!formattedUrl.match(/^https?:\/\//i)) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+
+      // Validate URL format
+      try {
+        new URL(formattedUrl);
+      } catch {
+        setError("Please enter a valid URL (e.g., example.com or https://example.com)");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Creating short URL for:", formattedUrl);
+      const response = await urlService.createUrl({ originalUrl: formattedUrl });
+      console.log("Response:", response);
+      
+      const fullShortUrl = `${API_BASE_URL}/${response.data.shortUrl}`;
+      setShortUrl(fullShortUrl);
+      setSuccess("URL shortened successfully!");
+      setUrl("");
+      
+      // Refresh the list
+      await fetchUserUrls();
     } catch (error) {
-      console.error("Error shortening URL:", error);
+      console.error("Error creating short URL:", error);
+      setError(error instanceof Error ? error.message : "Error shortening URL");
     } finally {
       setLoading(false);
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(shortUrl);
+  const handleDelete = async (urlId: string) => {
+    try {
+      await urlService.deleteUrl(urlId);
+      fetchUserUrls();
+    } catch (error) {
+      console.error("Error deleting URL:", error);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
@@ -50,27 +115,55 @@ export default function Home() {
               Transform long URLs into short, shareable links in seconds
             </p>
 
+            {isAuthenticated && (
+              <div className="mb-6">
+                <Link
+                  to="/dashboard"
+                  className="inline-block px-8 py-3 text-black font-semibold rounded-lg hover:bg-gray-200 transition"
+                  style={{ backgroundColor: '#f5f5f5' }}
+                >
+                  Go to Dashboard →
+                </Link>
+              </div>
+            )}
+
             {/* URL Shortener Form */}
             <div className="max-w-3xl mx-auto rounded-xl shadow-lg p-6" style={{ backgroundColor: '#292929' }}>
-              <form onSubmit={handleSubmit}>
+              {!isAuthenticated && (
+                <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500 text-yellow-500">
+                  ⚠️ Please login to shorten URLs
+                </div>
+              )}
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500 text-red-500">
+                  ❌ {error}
+                </div>
+              )}
+              {success && !error && (
+                <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500 text-green-500">
+                  ✅ {success}
+                </div>
+              )}
+              <form onSubmit={handleSubmit} className="space-y-3">
                 <div className="flex flex-col md:flex-row gap-3 md:gap-0">
                   <input
-                    type="url"
-                    id="url"
+                    type="text"
+                    id="url-input"
+                    name="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="Paste your long URL here..."
-                    required
-                    className="flex-1 px-5 py-3.5 border-2 text-white rounded-lg md:rounded-r-none md:border-r-0 focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400 text-base"
+                    placeholder="example.com/your-long-url"
+                    disabled={!isAuthenticated || loading}
+                    className="flex-1 px-5 py-3.5 border-2 text-white rounded-lg md:rounded-r-none md:border-r-0 focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400 text-base disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#363636', borderColor: '#444' }}
                   />
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !isAuthenticated || !url.trim()}
                     className="text-black font-semibold py-3.5 px-8 rounded-lg md:rounded-l-none hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-md"
                     style={{ backgroundColor: '#f5f5f5' }}
                   >
-                    {loading ? "Shortening..." : "Shorten"}
+                    {loading ? "Shortening..." : "Shorten URL"}
                   </button>
                 </div>
               </form>
@@ -90,7 +183,7 @@ export default function Home() {
                       style={{ backgroundColor: '#292929', borderColor: '#444' }}
                     />
                     <button
-                      onClick={copyToClipboard}
+                      onClick={() => copyToClipboard(shortUrl)}
                       className="px-6 py-2.5 text-black font-medium rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200 shadow-sm"
                       style={{ backgroundColor: '#f5f5f5' }}
                     >
@@ -173,6 +266,67 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* My URLs Section - Only show if authenticated */}
+      {isAuthenticated && userUrls.length > 0 && (
+        <section className="py-20" style={{ backgroundColor: '#292929' }}>
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl mx-auto">
+              <h2 className="text-4xl font-bold text-white mb-8 text-center">
+                My Shortened URLs
+              </h2>
+              <div className="space-y-4">
+                {userUrls.map((urlItem) => (
+                  <div
+                    key={urlItem.id}
+                    className="p-5 rounded-lg border"
+                    style={{ backgroundColor: '#363636', borderColor: '#444' }}
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-400 mb-1">Original URL</p>
+                        <p className="text-white truncate mb-3">{urlItem.originalUrl}</p>
+                        
+                        <p className="text-sm text-gray-400 mb-1">Short URL</p>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={`${API_BASE_URL}/${urlItem.shortUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 font-mono"
+                          >
+                            {`${API_BASE_URL}/${urlItem.shortUrl}`}
+                          </a>
+                        </div>
+                        
+                        <p className="text-sm text-gray-500 mt-2">
+                          Created: {new Date(urlItem.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => copyToClipboard(`${API_BASE_URL}/${urlItem.shortUrl}`)}
+                          className="px-4 py-2 text-black font-medium rounded-lg hover:bg-gray-200 transition"
+                          style={{ backgroundColor: '#f5f5f5' }}
+                        >
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => handleDelete(urlItem.id)}
+                          className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Stats Section */}
       <section className="py-20 text-white" style={{ backgroundColor: '#292929' }}>

@@ -1,30 +1,29 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
+import Card from "../components/ui/Card";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
     try {
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      console.log("Login success:", data);
-      // TODO: Handle login success (store token, redirect, etc.)
+      await login(email, password);
+      navigate("/dashboard");
     } catch (error) {
-      console.error("Error logging in:", error);
+      setError(error instanceof Error ? error.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -45,43 +44,32 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="rounded-xl shadow-lg p-8" style={{ backgroundColor: '#363636' }}>
+        <Card variant="elevated">
+          {error && <Alert type="error" message={error} className="mb-4" />}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border-2 text-white rounded-lg focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400"
-                style={{ backgroundColor: '#292929', borderColor: '#444' }}
-                placeholder="you@example.com"
-              />
-            </div>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              label="Email Address"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 text-white rounded-lg focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400"
-                style={{ backgroundColor: '#292929', borderColor: '#444' }}
-                placeholder="••••••••"
-              />
-            </div>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -104,16 +92,15 @@ export default function Login() {
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full text-black font-semibold py-3.5 px-4 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                style={{ backgroundColor: '#f5f5f5' }}
-              >
-                {loading ? "Signing in..." : "Sign in"}
-              </button>
-            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              isLoading={loading}
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </Button>
           </form>
 
           <div className="mt-6 text-center">
@@ -124,7 +111,7 @@ export default function Login() {
               </Link>
             </p>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
