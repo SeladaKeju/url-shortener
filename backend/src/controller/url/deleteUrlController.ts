@@ -17,7 +17,7 @@ export class DeleteUrlController {
       if (!urlId) {
         res.status(400).json({
           success: false,
-          message: "URL ID harus diisi",
+          message: "URL ID is required",
         });
         return;
       }
@@ -26,18 +26,18 @@ export class DeleteUrlController {
 
       res.status(200).json({
         success: true,
-        message: "URL berhasil dihapus",
+        message: "URL deleted successfully",
       });
     } catch (error: any) {
-      const statusCode = error.message.includes("tidak ditemukan")
+      const statusCode = error.message.includes("not found")
         ? 404
-        : error.message.includes("tidak memiliki akses")
+        : error.message.includes("not have access")
         ? 403
         : 400;
 
       res.status(statusCode).json({
         success: false,
-        message: error.message || "Gagal menghapus URL",
+        message: error.message || "Failed to delete URL",
       });
     }
   };

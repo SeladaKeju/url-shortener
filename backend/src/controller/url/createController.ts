@@ -17,7 +17,7 @@ export class CreateController {
       if (!originalUrl) {
         res.status(400).json({
           success: false,
-          message: "URL original harus diisi",
+          message: "Original URL is required",
         });
         return;
       }
@@ -26,13 +26,13 @@ export class CreateController {
 
       res.status(201).json({
         success: true,
-        message: "Short URL berhasil dibuat",
+        message: "Short URL created successfully",
         data: result,
       });
     } catch (error: any) {
       res.status(400).json({
         success: false,
-        message: error.message || "Gagal membuat short URL",
+        message: error.message || "Failed to create short URL",
       });
     }
   };

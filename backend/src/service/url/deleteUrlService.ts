@@ -12,15 +12,15 @@ export class DeleteUrlService {
         const url = await this.urlRepository.findByUserId(urlId);
 
         if (!url) {
-            throw new Error("URL tidak ditemukan");
+            throw new Error("URL not found");
         } 
 
         if (url.userId !== userId) {
-            throw new Error("Anda tidak berhak menghapus URL ini");
+            throw new Error("You do not have access to delete this URL");
         }
 
         await this.urlRepository.delete(urlId);
 
-        return { message: "URL berhasil dihapus" };
+        return { message: "URL deleted successfully" };
     }
 }

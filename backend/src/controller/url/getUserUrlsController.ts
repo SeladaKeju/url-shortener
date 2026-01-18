@@ -21,7 +21,7 @@ export class GetUserUrlsController {
     } catch (error: any) {
       res.status(400).json({
         success: false,
-        message: error.message || "Gagal mengambil data URL",
+        message: error.message || "Failed to fetch URLs",
       });
     }
   };
