@@ -40,9 +40,12 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <span className="text-white hidden md:block">
+                <Link
+                  to="/dashboard"
+                  className="text-white hidden md:block hover:text-gray-300 transition cursor-pointer"
+                >
                   {user?.email}
-                </span>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-6 py-2 rounded-lg hover:bg-gray-200 transition"

@@ -95,6 +95,10 @@ router.post("/register", authController.register);
  *                 format: password
  *                 example: password123
  *                 description: User password
+ *               rememberMe:
+ *                 type: boolean
+ *                 example: false
+ *                 description: Optional. Set to true to extend session duration to 30 days (default is 7 days)
  *     responses:
  *       200:
  *         description: Login successful

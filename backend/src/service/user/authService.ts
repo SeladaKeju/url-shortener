@@ -5,6 +5,7 @@ import { UserRepository } from "../../repository/user/userRepository";
 export class AuthService {
   private readonly JWT_SECRET: string;
   private readonly JWT_EXPIRES_IN: string;
+  private readonly JWT_EXPIRES_IN_EXTENDED: string;
   private userRepository: UserRepository;
 
   constructor() {
@@ -15,6 +16,7 @@ export class AuthService {
 
     this.JWT_SECRET = process.env.JWT_SECRET;
     this.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+    this.JWT_EXPIRES_IN_EXTENDED = process.env.JWT_EXPIRES_IN_EXTENDED || "30d";
     this.userRepository = new UserRepository();
   }
 
@@ -32,11 +34,11 @@ export class AuthService {
     });
 
     return {
-      user
+      user,
     };
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, rememberMe: boolean = false) {
     const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
@@ -49,7 +51,11 @@ export class AuthService {
       throw new Error("Invalid email or password");
     }
 
-    const token = this.generateToken(user.id);
+    // Gunakan durasi token yang berbeda berdasarkan remember me
+    const expiresIn = rememberMe
+      ? this.JWT_EXPIRES_IN_EXTENDED
+      : this.JWT_EXPIRES_IN;
+    const token = this.generateToken(user.id, expiresIn);
 
     return {
       user: {
@@ -58,6 +64,7 @@ export class AuthService {
         createdAt: user.createdAt,
       },
       token,
+      expiresIn, // Return expires info untuk keperluan cookie
     };
   }
 
@@ -71,9 +78,9 @@ export class AuthService {
     return user;
   }
 
-  private generateToken(userId: string): string {
+  private generateToken(userId: string, expiresIn?: string): string {
     const options: SignOptions = {
-      expiresIn: this.JWT_EXPIRES_IN as any,
+      expiresIn: (expiresIn || this.JWT_EXPIRES_IN) as any,
     };
 
     return jwt.sign(

@@ -21,7 +21,7 @@ export default function Login() {
 
     try {
       await login(email, password);
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Login failed");
     } finally {

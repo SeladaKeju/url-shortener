@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Link } from "react-router-dom";
 import urlService from "../services/urlService";
 import type { Url } from "../services/urlService";
 import API_BASE_URL from "../config/api";
@@ -10,9 +10,9 @@ export default function Home() {
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [userUrls, setUserUrls] = useState<Url[]>([]);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -33,13 +33,11 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setSuccess("");
     setShortUrl(""); // Clear previous result
 
     try {
       if (!isAuthenticated) {
-        setError("Please login to shorten URLs");
-        setLoading(false);
+        navigate("/login");
         return;
       }
 
@@ -71,7 +69,6 @@ export default function Home() {
       
       const fullShortUrl = `${API_BASE_URL}/${response.data.shortUrl}`;
       setShortUrl(fullShortUrl);
-      setSuccess("URL shortened successfully!");
       setUrl("");
       
       // Refresh the list
@@ -115,33 +112,11 @@ export default function Home() {
               Transform long URLs into short, shareable links in seconds
             </p>
 
-            {isAuthenticated && (
-              <div className="mb-6">
-                <Link
-                  to="/dashboard"
-                  className="inline-block px-8 py-3 text-black font-semibold rounded-lg hover:bg-gray-200 transition"
-                  style={{ backgroundColor: '#f5f5f5' }}
-                >
-                  Go to Dashboard →
-                </Link>
-              </div>
-            )}
-
             {/* URL Shortener Form */}
             <div className="max-w-3xl mx-auto rounded-xl shadow-lg p-6" style={{ backgroundColor: '#292929' }}>
-              {!isAuthenticated && (
-                <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500 text-yellow-500">
-                  ⚠️ Please login to shorten URLs
-                </div>
-              )}
               {error && (
                 <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500 text-red-500">
                   ❌ {error}
-                </div>
-              )}
-              {success && !error && (
-                <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500 text-green-500">
-                  ✅ {success}
                 </div>
               )}
               <form onSubmit={handleSubmit} className="space-y-3">
@@ -153,13 +128,13 @@ export default function Home() {
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     placeholder="example.com/your-long-url"
-                    disabled={!isAuthenticated || loading}
+                    disabled={loading}
                     className="flex-1 px-5 py-3.5 border-2 text-white rounded-lg md:rounded-r-none md:border-r-0 focus:ring-2 focus:ring-white/20 focus:border-white/20 outline-none transition placeholder-gray-400 text-base disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#363636', borderColor: '#444' }}
                   />
                   <button
                     type="submit"
-                    disabled={loading || !isAuthenticated || !url.trim()}
+                    disabled={loading}
                     className="text-black font-semibold py-3.5 px-8 rounded-lg md:rounded-l-none hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-md"
                     style={{ backgroundColor: '#f5f5f5' }}
                   >

@@ -37,7 +37,7 @@ export class AuthController {
 
   login = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password } = req.body;
+      const { email, password, rememberMe } = req.body;
 
       if (!email || !password) {
         res.status(400).json({
@@ -47,13 +47,22 @@ export class AuthController {
         return;
       }
 
-      const result = await this.authService.login(email, password);
+      const result = await this.authService.login(email, password, rememberMe);
 
-      res.cookie("token", result.token, {
+      // Hitung maxAge berdasarkan remember me
+      // expiresIn format: "7d" atau "30d"
+      const daysMatch = result.expiresIn.match(/^(\d+)d$/);
+      const days = daysMatch ? parseInt(daysMatch[1]) : 7;
+      const maxAge = days * 24 * 60 * 60 * 1000;
+
+      // Cookie settings yang berbeda untuk development dan production
+      const isProduction = process.env.NODE_ENV === "production";
+
+      res.cookie("remember_token", result.token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
+        secure: isProduction, // false di development, true di production
+        sameSite: isProduction ? "none" : "lax", // "lax" untuk development
+        maxAge,
       });
 
       res.status(200).json({
@@ -91,10 +100,12 @@ export class AuthController {
 
   logout = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.clearCookie("token", {
+      const isProduction = process.env.NODE_ENV === "production";
+
+      res.clearCookie("remember_token", {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
       });
 
       res.status(200).json({
