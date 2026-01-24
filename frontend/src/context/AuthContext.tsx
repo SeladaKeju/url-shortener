@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import authService from '../services/authService';
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const response = await authService.getProfile();
       setUser(response.data.user);
-    } catch (error) {
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);
