@@ -22,26 +22,29 @@ services:
     networks:
       - urlshortener-network
 
-  # Backend Application
+  # Backend Application (Development Mode)
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: node:20-alpine
     container_name: urlshortener-backend
     restart: unless-stopped
+    working_dir: /app
     ports:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://urlshortener:postgres_password_dev@postgres:5432/urlshortener
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+      JWT_SECRET: dev-secret
       PORT: 3000
-      NODE_ENV: production
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - /app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - urlshortener-network
-    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+    command: sh -c "npm install && npx prisma generate && npm run dev"
+
 
 networks:
   urlshortener-network:
